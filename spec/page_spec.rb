@@ -212,6 +212,44 @@ describe SitePrism::Page do
         swap_current_url('http://localhost:3000/foos/28')
         expect(page.displayed?(id: 17)).to eq(false)
       end
+
+      context 'with a page_wait_time' do
+        let(:some_page) do
+          Class.new(SitePrism::Page) do
+            set_url '/'
+            set_page_wait_time 42
+          end.new
+        end
+
+        before { allow(SitePrism::Waiter).to receive(:wait_until_true) }
+
+        it 'delegates to Waiter.wait_until_true with the page_wait_time' do
+          some_page.displayed?
+          expect(SitePrism::Waiter).to have_received(:wait_until_true).with(42)
+        end
+
+        context 'with a seconds argument' do
+          it 'delegates to the waiter with the argument' do
+            some_page.displayed?(60)
+            expect(SitePrism::Waiter).to have_received(:wait_until_true).with(60)
+          end
+        end
+      end
+
+      context 'without a page_wait_time' do
+        let(:some_page) do
+          Class.new(SitePrism::Page) do
+            set_url '/'
+          end.new
+        end
+
+        before { allow(SitePrism::Waiter).to receive(:wait_until_true) }
+
+        it 'delegates to Waiter.wait_until_true with the Waiter.default_wait_time' do
+          some_page.displayed?
+          expect(SitePrism::Waiter).to have_received(:wait_until_true).with(0)
+        end
+      end
     end
 
     it 'passes through incorrect expected_mappings from the be_displayed matcher' do
@@ -300,5 +338,54 @@ describe SitePrism::Page do
 
   def swap_current_url(url)
     allow(page).to receive(:page).and_return(double(current_url: url))
+  end
+
+  describe '.set_page_wait_time' do
+    let(:some_page_class) { Class.new(SitePrism::Page) }
+
+    it 'sets the page_wait_time' do
+      expect { some_page_class.set_page_wait_time(42) }
+        .to change { some_page_class.page_wait_time }
+        .from(0)
+        .to(42)
+    end
+  end
+
+  describe '.page_wait_time' do
+    context 'with a page_wait_time defined on the page class' do
+      let(:some_page_class) do
+        Class.new(SitePrism::Page) do
+          set_page_wait_time 42
+        end
+      end
+
+      it 'gets the instance variable' do
+        expect(some_page_class.page_wait_time).to eql(42)
+      end
+    end
+
+    context 'with a page_wait_time defined on a page superclass' do
+      let(:some_page_subclass) do
+        Class.new(some_page_superclass)
+      end
+
+      let(:some_page_superclass) do
+        Class.new(SitePrism::Page) do
+          set_page_wait_time 42
+        end
+      end
+
+      it 'delegates to it’s superclass' do
+        expect(some_page_subclass.page_wait_time).to eql 42
+      end
+    end
+
+    context 'without @page_wait_time defined on the page class or any page superclass' do
+      let(:some_page_class) { Class.new(SitePrism::Page) }
+
+      it 'returns Waiter.default_wait_time' do
+        expect(some_page_class.page_wait_time).to eql 0
+      end
+    end
   end
 end

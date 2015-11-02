@@ -20,7 +20,7 @@ module SitePrism
 
     def displayed?(*args)
       expected_mappings = args.last.is_a?(::Hash) ? args.pop : {}
-      seconds = args.length > 0 ? args.first : Waiter.default_wait_time
+      seconds = args.length > 0 ? args.first : self.class.page_wait_time
       fail SitePrism::NoUrlMatcherForPage if url_matcher.nil?
       begin
         Waiter.wait_until_true(seconds) { url_matches?(expected_mappings) }
@@ -75,6 +75,20 @@ module SitePrism
     def secure?
       !current_url.match(/^https/).nil?
     end
+
+    def self.set_page_wait_time(seconds)
+      @page_wait_time = seconds
+    end
+
+    def self.page_wait_time
+      @page_wait_time ||= ancestral_wait_time
+    end
+
+    def self.ancestral_wait_time
+      return Waiter.default_wait_time unless superclass.respond_to? :page_wait_time
+      superclass.page_wait_time
+    end
+    private_class_method :ancestral_wait_time
 
     private
 
