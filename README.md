@@ -195,6 +195,19 @@ end
 
 See https://github.com/sporkmonger/addressable for more details on parameterized URLs.
 
+### Adding a wait time
+
+Sometimes complex processing between pages causes a certain page to take a long time to be displayed.
+If you want the *displayed?* method to automatically wait longer than the default, here's how:
+
+```ruby
+class SlowLoadingPage < SitePrism::Page
+  set_page_wait_time 10
+end
+```
+
+Note that this can still be overriden by passing a wait time argument to *displayed?*, e.g: `displayed?(1)`
+
 ### Navigating to the Page
 
 Once the URL has been set (using `set_url`), you can navigate directly
