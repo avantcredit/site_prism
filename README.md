@@ -206,6 +206,19 @@ class SlowLoadingPage < SitePrism::Page
 end
 ```
 
+The wait time is also inherited from superclasses. For example:
+
+```ruby
+class SlowLoadingBasePage < SitePrism::Page
+  set_page_wait_time 10
+end
+
+class SlowLoadingPage < SlowLoadingBasePage
+end
+
+SlowLoadingPage.new.displayed? # => waits up to 10 seconds to be displayed
+```
+
 Note that this can still be overriden by passing a wait time argument to *displayed?*, e.g: `displayed?(1)`
 
 ### Navigating to the Page
